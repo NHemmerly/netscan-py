@@ -2,12 +2,12 @@ import argparse
 from scanner import Scanner
 
 def main():
-    print("Hello World!")
     parser = argparse.ArgumentParser()
-    parser.add_argument("client_server")
-    parser.add_argument("port")
+    parser.add_argument("-t", "--type")
+    parser.add_argument("-p", "--ports")
+    parser.add_argument("-r", "--range")
     args = parser.parse_args()
-    scanny = Scanner(args.client_server, port=int(args.port))
+    scanny = Scanner(args.type, port=int(args.ports), range=args.range)
 
     scanny.scan()
 

@@ -1,4 +1,5 @@
 import socket
+from packet import Packet
 
 class Scanner():
     def __init__(self, client_server,protocol=None, range="127.0.0.1", port=65432):
@@ -6,7 +7,8 @@ class Scanner():
         self.protocol = protocol        # TCP or UDP - most scans will be TCP 
         self.port = port                # Port or port range
         self.client_server = client_server
-
+        print(self.range)
+        pack = Packet()
 
     def _determine_range(self):
         # Function for parsing ip range into a list of IPs to scan
