@@ -1,5 +1,6 @@
 import socket
 from packet import Packet
+import binascii
 
 class Scanner():
     def __init__(self, client_server,protocol=None, range="127.0.0.1", port=65432):
@@ -8,7 +9,7 @@ class Scanner():
         self.port = port                # Port or port range
         self.client_server = client_server
         print(self.range)
-        pack = Packet()
+        self.packet = Packet(dst=range, port=port)
 
     def _determine_range(self):
         # Function for parsing ip range into a list of IPs to scan
@@ -20,7 +21,7 @@ class Scanner():
 
     def scan(self):
         if self.client_server == "client":
-            self._client()
+            return self._client()
         elif self.client_server == "server":
             self._server()
         else:
@@ -43,12 +44,11 @@ class Scanner():
                     conn.sendall(data)
 
     def _client(self):
-        HOST = self.range  # The server's hostname or IP address
-        PORT = self.port  # The port used by the server
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((HOST, PORT))
-            s.sendall(b"Hello, world")
-            data = s.recv(1024)
-
-        print(f"Received {data!r}")     
+        s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+        s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+        print(self.packet.packet)
+        s.sendto(self.packet.packet, (self.range, 0))
+        data = s.recv(1024)
+        s.close()
+        response = binascii.hexlify(data)
+        return response

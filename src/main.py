@@ -9,7 +9,7 @@ def main():
     args = parser.parse_args()
     scanny = Scanner(args.type, port=int(args.ports), range=args.range)
 
-    scanny.scan()
+    print(scanny.scan())
 
 if __name__ == "__main__":
     main()
