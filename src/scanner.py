@@ -50,5 +50,5 @@ class Scanner():
         s.sendto(self.packet.packet, (self.range, 0))
         data = s.recv(1024)
         s.close()
-        response = binascii.hexlify(data)
-        return response
+        
+        return data
