@@ -1,14 +1,14 @@
 import socket
-import fcntl
 import struct
 import random
 # A class to create custom packet objects depending on the type of service
 # being scanned. Can create custom packets as well as parse incoming packets.
 
 class Packet():
-    def __init__(self, port, src="127.0.0.1", dst="127.0.0.1", interface='eth0'):
+    def __init__(self, port, src="127.0.0.1", dst="127.0.0.1"):
         self.src = src
-        self.dst = dst
+        self.dst = socket.inet_aton(dst)
+        self.dst_string = dst
         self.port = port
 
         # IP packet
@@ -24,11 +24,6 @@ class Packet():
         self.ttl =              0x40
         self.protocol =         0x6
         self.header_checksum =  0x0
-
-        self.src_bytes = self._get_local_ip(interface)
-
-        self.dst_bytes = socket.inet_aton(self.dst)
-        print(self.src_bytes, self.dst_bytes)
 
         # TCP packet
         self.src_port =         random.randint(40000, 65432)
@@ -53,8 +48,6 @@ class Packet():
 
         self._gen_packet()
 
-
-
     def _get_ip_checksum(self, data):
         check_sum = 0
         for i in range(0, len(data), 2):
@@ -74,17 +67,17 @@ class Packet():
     def _gen_ip_header(self):
         tmp_ip_header = struct.pack("!BBHHHBBH4s4s", self.v_ihl, self.tos, self.total_len,
                                     self.identification, self.f_fo, self.ttl, self.protocol,
-                                    self.header_checksum, self.src_bytes, self.dst_bytes)
+                                    self.header_checksum, self.src, self.dst)
         return tmp_ip_header
 
     def _gen_packet(self):
         final_ip_header = struct.pack("!BBHHHBBH4s4s", self.v_ihl, self.tos, self.total_len,
                                                 self.identification, self.f_fo,
                                                 self.ttl, self.protocol, self._get_ip_checksum(self._gen_ip_header()),
-                                                self.src_bytes,
-                                                self.dst_bytes)
+                                                self.src,
+                                                self.dst)
         tmp_tcp_header = self._gen_tcp_tmp_header()
-        psuedo_tcp_header = struct.pack("!4s4sBBH", self.src_bytes, self.dst_bytes, self.tcp_checksum, self.protocol, len(tmp_tcp_header))
+        psuedo_tcp_header = struct.pack("!4s4sBBH", self.src, self.dst, self.tcp_checksum, self.protocol, len(tmp_tcp_header))
         tcp = tmp_tcp_header + psuedo_tcp_header
         final_tcp_header = struct.pack("!HHLLHHHH", self.src_port, self.dst_port, self.seq_num,
                                        self.ack_num, self.data_offset_res_flags, self.window_size,
@@ -93,22 +86,12 @@ class Packet():
         self.tcp_header = final_tcp_header
         self.packet = final_ip_header + final_tcp_header
 
-    def _get_local_ip(self, ifname):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        raw_bytes = fcntl.ioctl(
-            s.fileno(),
-            0x8915,
-            struct.pack('256s', ifname[:15].encode())
-        )[20:24]
-
-        return raw_bytes
     
     def send_packet(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
         s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-        s.sendto(self.packet, (self.dst, 0))
-        data = s.recvfrom(65535)
-        unpacked = struct.unpack("!HHLLHHHH", data[0][:20])
+        s.sendto(self.packet, (self.dst_string, 0))
+        data = s.recvfrom(1024)
         s.close()
         
-        return unpacked
+        return data[0][33]

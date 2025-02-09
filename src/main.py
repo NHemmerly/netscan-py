@@ -7,9 +7,9 @@ def main():
     parser.add_argument("-p", "--ports")
     parser.add_argument("-r", "--range")
     args = parser.parse_args()
-    scanny = Scanner(args.type, port=int(args.ports), range=args.range)
+    scanny = Scanner(args.type, port=args.ports, range=args.range)
 
-    print(scanny.scan())
+    scanny.scan()
 
 if __name__ == "__main__":
     main()
