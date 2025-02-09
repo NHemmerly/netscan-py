@@ -8,7 +8,6 @@ class Scanner():
         self.protocol = protocol        # TCP or UDP - most scans will be TCP 
         self.port = port                # Port or port range
         self.client_server = client_server
-        print(self.range)
         self.packet = Packet(dst=range, port=port)
 
     def _determine_range(self):
@@ -21,7 +20,7 @@ class Scanner():
 
     def scan(self):
         if self.client_server == "client":
-            return self._client()
+            return self.packet.send_packet()
         elif self.client_server == "server":
             self._server()
         else:
@@ -48,7 +47,7 @@ class Scanner():
         s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
         print(self.packet.packet)
         s.sendto(self.packet.packet, (self.range, 0))
-        data = s.recv(1024)
+        data = s.recvfrom(65535)
         s.close()
         
         return data

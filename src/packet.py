@@ -102,3 +102,13 @@ class Packet():
         )[20:24]
 
         return raw_bytes
+    
+    def send_packet(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+        s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+        s.sendto(self.packet, (self.dst, 0))
+        data = s.recvfrom(65535)
+        unpacked = struct.unpack("!HHLLHHHH", data[0][:20])
+        s.close()
+        
+        return unpacked
