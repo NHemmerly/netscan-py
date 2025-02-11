@@ -5,6 +5,12 @@
 My plan for this project is to create a robust port scanning tool using Python. Taking clear inspiration from [nmap](https://nmap.org/). I chose to do this as my first personal project for my [boot.dev](https://www.boot.dev/tracks/backend) backend programming course. My goals for this project are to learn more about how packets are built and sent by applications, and to gain a little bit of insight into what is happening under the hood in tools like nmap. 
 
 I'm deeply interested in information security, so this project felt like a logical choice. 
+### Todo
+ 1. Scan ranges of IP addresses based on syntax input by user. 
+ 2. Add a cleaner output
+ 3. Figure out why it sometimes runs really slowly
+ 4. Add more information to the cli tool with argparse
+ 5. 
 
 ## Usage
 

@@ -1,7 +1,8 @@
 import socket
+import ipaddress
 import struct
+import re
 import fcntl
-import binascii
 from packet import Packet
 
 class Scanner():
@@ -11,13 +12,55 @@ class Scanner():
         self.port = port                # Port or port range
         self.client_server = client_server
         self.port = self._determine_ports()
+        self.range = self._determine_range()
         self.local = self._get_local_ip(interface)
 
     def _determine_range(self):
-        # Function for parsing ip range into a list of IPs to scan
-        pass
+        # Parses IP input to create a range of IP addresses in a list 
+        # 192.168.1.0/24 should scan entire /24 range starting from xxx.xxx.xxx.0
+        # 192.168.1.20-32 should scan every IP from 192.168.1.20 to 192.168.1.32
+        # 192.168.1.20,23,27 ???
+        ips = []
+        single_ip = re.compile(r"\b([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\b(?!\/|\-)")
+        cidr_range = re.compile(r"\b[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\/[0-9]{1,2}\b")
+        oct_range = re.compile(r"\b(?:[0-9]{1,3}(?:-[0-9]{1,3})?\.){3}[0-9]{1,3}(?:-[0-9]{1,3})\b")
+        comma_range = re.compile(r"\b[0-2][0-9]{1,2}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(\,[0-9]{1,3})+\b")
+        cidr = re.findall(cidr_range, self.range)
+        oct = re.findall(oct_range, self.range)
+        if oct:
+            for ip in oct:
+                start = 0
+                end = 0
+                octet = 0
+                octets = ip.split('.')
+                for i in range(len(octets)):
+                    if '-' in octets[i]:
+                        octet = i
+                        start_end = octets[i].split('-')
+                        start = int(start_end[0])
+                        end = int(start_end[1])
+                for i in range(start, end + 1):
+                    octets[octet] = str(i)
+                    ips.append(".".join(octets))
+                
+        if cidr:
+            for ip in cidr:
+                network = ipaddress.IPv4Network(ip)
+                for addr in network:
+                    if addr != network.network_address and addr != network.broadcast_address:
+                        ips.append(format(addr))
+        ips.extend(re.findall(single_ip, self.range))
+        ips.extend(re.findall(comma_range, self.range))
+                    
+
+
+        print(ips)
+        return ips
+
+        
 
     def _determine_ports(self):
+        # Parses port input to create a list of ports
         self.port = self.port.split(',')
         new_ports = []
         for port in self.port:
