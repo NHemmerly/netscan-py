@@ -15,6 +15,21 @@ class Scanner():
         self.range = self._determine_range()
         self.local = self._get_local_ip(interface)
 
+    def scan(self):
+        for ip in self.range:
+            print("-" * 50)
+            print("Host" + (" " * 12) + "Port" + (" " * 12) + "State")
+            print("-" * 50)
+            for port in self.port:
+                flags = Packet(port, src=self.local ,dst=ip).send_packet()
+                print({ip}, {flags})
+                if flags == 18:
+                    print(ip + (" " * 6) + f"{port}" + (" " * 12) + "open")
+                #else:
+                    #print(f"Port {port} is closed")
+    
+    def _format_output(self, ip, port):
+        pass
     def _determine_range(self):
         # Parses IP input to create a range of IP addresses in a list 
         # Currently can process cidr. Comma ranges and hyphenated ranges may only appear at the end.
@@ -58,11 +73,7 @@ class Scanner():
                 for i in range(len(commas)):
                     base_plus_hosts[octet] = commas[i]
                     ips.append(".".join(base_plus_hosts))
-                
         ips.extend(re.findall(single_ip, self.range))
-                    
-
-
         print(ips)
         return ips
 
@@ -92,13 +103,6 @@ class Scanner():
         
         return raw_bytes
 
-    def scan(self):
-        for port in self.port:
-            flags = Packet(port, src=self.local ,dst=self.range).send_packet()
-            if flags == 18:
-                print(f"Port {port} is open")
-            #else:
-                #print(f"Port {port} is closed")
 
     def _server(self):
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)

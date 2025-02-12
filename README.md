@@ -6,9 +6,9 @@ My plan for this project is to create a robust port scanning tool using Python. 
 
 I'm deeply interested in information security, so this project felt like a logical choice. 
 ### Todo
- 1. Scan ranges of IP addresses based on syntax input by user. 
+ 1. Scan ranges of IP addresses based on syntax input by user. (Kind of complete, does not do combinations of syntax, but will scan cidr ranges, comma selections in the final octet, and hyphenated ranges in the final octet)
  2. Add a cleaner output
- 3. Figure out why it sometimes runs really slowly
+ 3. Figure out why it sometimes runs really slowly (parallelization?)
  4. Add more information to the cli tool with argparse
  5. 
 
