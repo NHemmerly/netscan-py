@@ -17,40 +17,49 @@ class Scanner():
 
     def _determine_range(self):
         # Parses IP input to create a range of IP addresses in a list 
-        # 192.168.1.0/24 should scan entire /24 range starting from xxx.xxx.xxx.0
-        # 192.168.1.20-32 should scan every IP from 192.168.1.20 to 192.168.1.32
-        # 192.168.1.20,23,27 ???
+        # Currently can process cidr. Comma ranges and hyphenated ranges may only appear at the end.
+        # Not sure how to provide full functionality for comma + hyphen ranges like nmap has. 
         ips = []
-        single_ip = re.compile(r"\b([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\b(?!\/|\-)")
+        single_ip = re.compile(r"\b([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\b(?!\/|\-|,[0-9]{1,3})")
         cidr_range = re.compile(r"\b[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\/[0-9]{1,2}\b")
         oct_range = re.compile(r"\b(?:[0-9]{1,3}(?:-[0-9]{1,3})?\.){3}[0-9]{1,3}(?:-[0-9]{1,3})\b")
-        comma_range = re.compile(r"\b[0-2][0-9]{1,2}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(\,[0-9]{1,3})+\b")
+        comma_range = re.compile(r"\b[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(?:,[0-9]{1,3})+\b")
         cidr = re.findall(cidr_range, self.range)
         oct = re.findall(oct_range, self.range)
+        comma = re.findall(comma_range, self.range)
         if oct:
             for ip in oct:
-                start = 0
-                end = 0
-                octet = 0
+                start,end,octet = 0,0,0
                 octets = ip.split('.')
                 for i in range(len(octets)):
                     if '-' in octets[i]:
                         octet = i
                         start_end = octets[i].split('-')
-                        start = int(start_end[0])
+                        start,end = int(start_end[0]), int(start_end[1])
                         end = int(start_end[1])
                 for i in range(start, end + 1):
                     octets[octet] = str(i)
-                    ips.append(".".join(octets))
-                
+                    ips.append(".".join(octets)) 
         if cidr:
             for ip in cidr:
                 network = ipaddress.IPv4Network(ip)
                 for addr in network:
                     if addr != network.network_address and addr != network.broadcast_address:
                         ips.append(format(addr))
+        if comma:
+            for ip in comma:
+                base_plus_hosts = ip.split(".")
+                commas = []
+                octet = 0
+                for i in range(len(base_plus_hosts)):
+                    if "," in base_plus_hosts[i]:
+                        octet = i
+                        commas.extend(base_plus_hosts[i].split(","))
+                for i in range(len(commas)):
+                    base_plus_hosts[octet] = commas[i]
+                    ips.append(".".join(base_plus_hosts))
+                
         ips.extend(re.findall(single_ip, self.range))
-        ips.extend(re.findall(comma_range, self.range))
                     
 
 
