@@ -1,6 +1,7 @@
 import socket
 import ipaddress
 import struct
+import random
 import re
 import fcntl
 from packet import Packet
@@ -10,6 +11,7 @@ class Scanner():
         self.range = range              # IP or CIDR IP range
         self.protocol = protocol        # TCP or UDP - most scans will be TCP 
         self.port = port                # Port or port range
+        self.src_port = random.randint(40000, 55000)
         self.client_server = client_server
         self.port = self._determine_ports()
         self.range = self._determine_range()
@@ -21,9 +23,8 @@ class Scanner():
             print("Host" + (" " * 12) + "Port" + (" " * 12) + "State")
             print("-" * 50)
             for port in self.port:
-                flags = Packet(port, src=self.local ,dst=ip).send_packet()
-                print({ip}, {flags})
-                if flags == 18:
+                flags = Packet(self.src_port, port, src=self.local ,dst=ip).send_packet()
+                if flags:
                     print(ip + (" " * 6) + f"{port}" + (" " * 12) + "open")
                 #else:
                     #print(f"Port {port} is closed")

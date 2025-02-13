@@ -1,11 +1,11 @@
 import socket
 import struct
-import random
+import time
 # A class to create custom packet objects depending on the type of service
 # being scanned. Can create custom packets as well as parse incoming packets.
 
 class Packet():
-    def __init__(self, port, src="127.0.0.1", dst="127.0.0.1"):
+    def __init__(self, src_port, port, src="127.0.0.1", dst="127.0.0.1"):
         self.src = src
         self.dst = socket.inet_aton(dst)
         self.dst_string = dst
@@ -26,7 +26,7 @@ class Packet():
         self.header_checksum =  0x0
 
         # TCP packet
-        self.src_port =         random.randint(40000, 65432)
+        self.src_port =         src_port
         self.dst_port =         port
         self.seq_num =          0x0
         self.ack_num =          0x0
@@ -91,7 +91,8 @@ class Packet():
         s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
         s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
         s.sendto(self.packet, (self.dst_string, 0))
+        time.sleep(0.2)
         data = s.recvfrom(1024)
         s.close()
-        
-        return data[0][33]
+        flags = bin(data[0][33])
+        return (flags[2] == '1' and flags[5] == '1')
