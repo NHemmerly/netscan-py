@@ -1,6 +1,7 @@
 import socket
 import struct
 import time
+import asyncio
 # A class to create custom packet objects depending on the type of service
 # being scanned. Can create custom packets as well as parse incoming packets.
 
@@ -87,12 +88,12 @@ class Packet():
         self.packet = final_ip_header + final_tcp_header
 
     
-    def send_packet(self):
+    async def send_packet(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
         s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
         s.sendto(self.packet, (self.dst_string, 0))
-        time.sleep(0.2)
+        await asyncio.sleep(1)
         data = s.recvfrom(1024)
         s.close()
-        flags = bin(data[0][33])
-        return (flags[2] == '1' and flags[5] == '1')
+        flags = data[0][33]
+        return (flags == 18)

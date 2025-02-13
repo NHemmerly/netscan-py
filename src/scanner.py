@@ -4,6 +4,7 @@ import struct
 import random
 import re
 import fcntl
+import asyncio
 from packet import Packet
 
 class Scanner():
@@ -16,6 +17,17 @@ class Scanner():
         self.port = self._determine_ports()
         self.range = self._determine_range()
         self.local = self._get_local_ip(interface)
+
+    async def async_scan(self):
+        tasks = []
+        async with asyncio.TaskGroup() as tg:
+            for ip in self.range:
+                for port in self.port:
+                    task = tg.create_task(Packet(self.src_port, port, src=self.local ,dst=ip).send_packet())
+                    tasks.append(task)
+        results = [task.result() for task in tasks]
+        for result in results:
+            print(f"results {result}")
 
     def scan(self):
         for ip in self.range:
@@ -78,8 +90,6 @@ class Scanner():
         print(ips)
         return ips
 
-        
-
     def _determine_ports(self):
         # Parses port input to create a list of ports
         self.port = self.port.split(',')
@@ -103,29 +113,3 @@ class Scanner():
         )[20:24]\
         
         return raw_bytes
-
-
-    def _server(self):
-        HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-        PORT = 65432  # Port to listen on (non-privileged ports are > 1023)
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind((HOST, PORT))
-            s.listen()
-            conn, addr = s.accept()
-            with conn:
-                print(f"Connected by {addr}")
-                while True:
-                    data = conn.recv(1024)
-                    if not data:
-                        break
-                    conn.sendall(data)
-
-    def _client(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-        s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-        s.sendto(self.packet.packet, (self.range, 0))
-        data = s.recvfrom(65535)
-        s.close()
-        
-        return data
