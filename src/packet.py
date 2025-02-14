@@ -96,3 +96,13 @@ class Packet():
         s.close()
         flags = data[0][33]
         return (flags == 18)
+    
+    def full_connection(self):
+        HOST = self.dst_string  # The server's hostname or IP address
+        PORT = self.dst_port  # The port used by the server
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1)
+        s.connect((HOST, PORT))
+        s.send(b"HEAD / HTTP/1.1\r\n\r\n")
+        data = s.recv(1024).decode("utf-8", errors="ignore").strip()
+        return data.split("\n")[0]

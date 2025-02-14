@@ -1,3 +1,4 @@
+import sys
 import socket
 import ipaddress
 import struct
@@ -7,19 +8,30 @@ import fcntl
 from packet import Packet
 
 class Scanner():
-    def __init__(self, client_server,protocol=None, range="127.0.0.1", port=65432, interface='eth0'):
+    def __init__(self, protocol=None, range="127.0.0.1", port=65432, interface='eth0', version="False"):
         self.range = range              # IP or CIDR IP range
         self.protocol = protocol        # TCP or UDP - most scans will be TCP 
         self.port = port                # Port or port range
         self.src_port = random.randint(40000, 55000)
-        self.client_server = client_server
         self.port = self._determine_ports()
         self.range = self._determine_range()
         self.local = self._get_local_ip(interface)
+        if version != None:
+            if version.upper() == "TRUE" or version.upper() == "FALSE":
+                self.version_scan = version.upper() == "TRUE"
+            else:
+                print("Please specify 'true' or 'false' for version scanning (default is false)")
+                sys.exit(0)
+        
 
     def scan(self):
         open_ports = {}
         for ip in self.range:
+            try:
+                ipaddress.ip_address(ip)
+            except ValueError:
+                print(f"{ip} is not a valid IP address")
+                return
             for port in self.port:
                 flags = Packet(self.src_port, port, src=self.local ,dst=ip).send_packet()
                 if flags:
@@ -27,6 +39,15 @@ class Scanner():
                         open_ports[ip] = []
                     open_ports[ip].append(port)
         self._format_output(open_ports)
+        if self.version_scan == True:
+            self._version_scan(open_ports)
+
+    def _version_scan(self, open_ports):
+        for host in open_ports.keys():
+            for port in open_ports[host]:
+                result = Packet(self.src_port, port, src=self.local ,dst=host).full_connection()
+                print(result)
+
     
     def _format_output(self, open_ports):
         for host in open_ports.keys():
@@ -86,6 +107,7 @@ class Scanner():
 
     def _determine_ports(self):
         # Parses port input to create a list of ports
+
         self.port = self.port.split(',')
         new_ports = []
         for port in self.port:
@@ -93,8 +115,14 @@ class Scanner():
                 port = port.split('-')
                 port = [num for num in range(int(port[0]), int(port[1]) + 1)]
                 for i in port:
+                    if i < 1 or i > 65535:
+                            print(f"{i} is not a valid port. Must be 1 <= port <= 65535")
+                            sys.exit(1)
                     new_ports.append(i)
             else:
+                if int(port) < 1 or int(port) > 65535:
+                        print(f"{port} is not a valid port. Must be 1 <= port <= 65535")
+                        sys.exit(1)
                 new_ports.append(int(port))
         return new_ports
 
