@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 from scanner import Scanner
 
 def main():
@@ -9,7 +8,7 @@ def main():
     parser.add_argument("-r", "--range")
     args = parser.parse_args()
     scanny = Scanner(args.type, port=args.ports, range=args.range)
-    asyncio.run(scanny.async_scan())
+    scanny.scan()
 
 if __name__ == "__main__":
     main()

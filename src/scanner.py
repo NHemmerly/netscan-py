@@ -4,7 +4,6 @@ import struct
 import random
 import re
 import fcntl
-import asyncio
 from packet import Packet
 
 class Scanner():
@@ -18,31 +17,26 @@ class Scanner():
         self.range = self._determine_range()
         self.local = self._get_local_ip(interface)
 
-    async def async_scan(self):
-        tasks = []
-        async with asyncio.TaskGroup() as tg:
-            for ip in self.range:
-                for port in self.port:
-                    task = tg.create_task(Packet(self.src_port, port, src=self.local ,dst=ip).send_packet())
-                    tasks.append(task)
-        results = [task.result() for task in tasks]
-        for result in results:
-            print(f"results {result}")
-
     def scan(self):
+        open_ports = {}
         for ip in self.range:
-            print("-" * 50)
-            print("Host" + (" " * 12) + "Port" + (" " * 12) + "State")
-            print("-" * 50)
             for port in self.port:
                 flags = Packet(self.src_port, port, src=self.local ,dst=ip).send_packet()
                 if flags:
-                    print(ip + (" " * 6) + f"{port}" + (" " * 12) + "open")
-                #else:
-                    #print(f"Port {port} is closed")
+                    if ip not in open_ports.keys():
+                        open_ports[ip] = []
+                    open_ports[ip].append(port)
+        self._format_output(open_ports)
     
-    def _format_output(self, ip, port):
-        pass
+    def _format_output(self, open_ports):
+        for host in open_ports.keys():
+            print("-" * 50)
+            print("Host" + (" " * 12) + "Port" + (" " * 12) + "State")
+            print("-" * 50)
+            for port in open_ports[host]:
+                print(host + (" " * 6) + f"{port}" + (" " * 12) + "open")
+                
+
     def _determine_range(self):
         # Parses IP input to create a range of IP addresses in a list 
         # Currently can process cidr. Comma ranges and hyphenated ranges may only appear at the end.
